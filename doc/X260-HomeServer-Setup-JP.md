@@ -1,4 +1,4 @@
-# ThinkPad X260 ホームサーバー構築ガイド
+# ThinkPad X260 サーバー構築ガイド
 
 ThinkPad X260 に Ubuntu Server をインストールし、以下のサービスをまとめて構築する手順です。
 
