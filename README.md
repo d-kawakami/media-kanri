@@ -1,4 +1,4 @@
-# Plant Media Manager / プラント メディア管理システム
+# Plant Media Manager / プラント メディア管理
 
 A lightweight web application for transferring and browsing photos and videos captured on-site at industrial facilities. Designed for plant engineers using smartphones on the factory floor.
 
