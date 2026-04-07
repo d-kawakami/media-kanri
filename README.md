@@ -4,7 +4,7 @@ A lightweight web application for transferring and browsing photos and videos ca
 
 スマートフォンから現場の写真・動画を転送・閲覧するための軽量Webアプリです。プラントエンジニアの現場利用を想定した設計になっています。
 
-![Plant Media Manager](doc/images/plantmedia.jpg)
+<img src="doc/images/plantmedia.jpg" width="440" >
 
 ---
 
