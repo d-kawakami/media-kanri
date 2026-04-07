@@ -4,6 +4,8 @@ A lightweight web application for transferring and browsing photos and videos ca
 
 [日本語版はこちら / 日本語](README.ja.md)
 
+**Server Setup Guide:** [ThinkPad X260 Home Server Setup](doc/X260-HomeServer-Setup-EN.md)
+
 <img src="doc/images/plantmedia.jpg" width="440" >
 
 ---
