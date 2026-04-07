@@ -1,4 +1,4 @@
-# ThinkPad X260 Home Server Setup Guide
+# ThinkPad X260 Server Setup Guide
 
 A step-by-step guide to installing Ubuntu Server on a ThinkPad X260 and setting up the following services:
 
