@@ -2,6 +2,8 @@
 
 スマートフォンから現場の写真・動画を転送・閲覧するための軽量Webアプリです。
 
+10年前の古いPC（ThinkPad X260 など）を活用して、新たなハードウェア購入なしに低コストでサーバを構築することを想定しています。
+
 [English version here / English](README.md)
 
 **サーバ構築手順書:** [ThinkPad X260 ホームサーバ構築手順](doc/X260-HomeServer-Setup-JP.md)

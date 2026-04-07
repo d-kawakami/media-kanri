@@ -2,6 +2,8 @@
 
 A lightweight web application for transferring and browsing photos and videos captured on-site at industrial facilities.
 
+This project is designed to run on an old PC (such as a 10-year-old ThinkPad), making it possible to build a functional server at minimal cost — no new hardware required.
+
 [日本語版はこちら / 日本語](README.ja.md)
 
 **Server Setup Guide:** [ThinkPad X260 Home Server Setup](doc/X260-HomeServer-Setup-EN.md)
