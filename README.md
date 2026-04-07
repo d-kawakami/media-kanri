@@ -1,37 +1,37 @@
-# Media Manager / メディア管理
+# Media Manager
 
-A lightweight web application for transferring and browsing photos and videos captured on-site at industrial facilities. 
-スマートフォンから現場の写真・動画を転送・閲覧するための軽量Webアプリです。
+A lightweight web application for transferring and browsing photos and videos captured on-site at industrial facilities.
+
+[日本語版はこちら / 日本語](README.ja.md)
 
 <img src="doc/images/plantmedia.jpg" width="440" >
 
 ---
 
-## Features / 機能
+## Features
 
-- **File Upload / ファイル転送**
-  - Camera capture and file selection from smartphone / スマートフォンからカメラ撮影・ファイル選択
-  - Drag & drop support / ドラッグ＆ドロップ対応
-  - Multi-file simultaneous upload with progress bar / 複数ファイル同時転送・進捗バー表示
+- **File Upload**
+  - Camera capture and file selection from smartphone
+  - Drag & drop support
+  - Multi-file simultaneous upload with progress bar
 
-- **File Browser / ファイル一覧**
-  - Thumbnail grid view / サムネイルグリッド表示
-  - Filename list view / ファイル名リスト表示
-  - Supports images (JPG, PNG, GIF) and videos (MP4, MOV, AVI, WebM) and any other file types
-  - 画像・動画・その他すべてのファイル形式に対応
+- **File Browser**
+  - Thumbnail grid view
+  - Filename list view
+  - Supports images (JPG, PNG, GIF), videos (MP4, MOV, AVI, WebM), and any other file types
 
-- **Download / ダウンロード**
-  - Direct download of any file from client devices / クライアント端末からの直接ダウンロード
+- **Download**
+  - Direct download of any file from client devices
 
-- **Delete / 削除**
-  - Delete files with confirmation dialog / 確認ダイアログ付きでファイル削除
+- **Delete**
+  - Delete files with confirmation dialog
 
-- **Media Viewer / メディアビューア**
-  - Full-screen image/video viewer with download button / フルスクリーンの画像・動画ビューア
+- **Media Viewer**
+  - Full-screen image/video viewer with download button
 
 ---
 
-## System Architecture / システム構成
+## System Architecture
 
 ```
 Smartphone (Client)
@@ -52,7 +52,7 @@ Smartphone (Client)
 
 ---
 
-## Requirements / 動作要件
+## Requirements
 
 - Python 3.10+
 - Flask
@@ -62,16 +62,16 @@ Smartphone (Client)
 
 ---
 
-## Setup / セットアップ
+## Setup
 
-### 1. Clone the repository / リポジトリをクローン
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/d-kawakami/media-kanri.git
 cd media-kanri
 ```
 
-### 2. Create virtual environment / 仮想環境を作成
+### 2. Create virtual environment
 
 ```bash
 python3 -m venv venv
@@ -79,7 +79,7 @@ source venv/bin/activate
 pip install flask
 ```
 
-### 3. Configure nginx / nginx設定
+### 3. Configure nginx
 
 ```nginx
 server {
@@ -94,7 +94,7 @@ server {
 }
 ```
 
-### 4. Configure systemd service / systemdサービス設定
+### 4. Configure systemd service
 
 ```ini
 [Unit]
@@ -116,7 +116,7 @@ sudo systemctl enable webapp
 sudo systemctl start webapp
 ```
 
-### 5. Set upload folder permissions / アップロードフォルダの権限設定
+### 5. Set upload folder permissions
 
 ```bash
 sudo chown www-data /opt/webapp/uploads
@@ -124,29 +124,23 @@ sudo chown www-data /opt/webapp/uploads
 
 ---
 
-## Access / アクセス方法
+## Access
 
 Connect your smartphone to the Wi-Fi AP, then open:
 
-スマートフォンをWi-FiのAPに接続し、以下のURLにアクセスしてください。
-
-| Page          | URL                        |
-|---------------|----------------------------|
-| Upload / 転送 | `http://192.168.1.250/photo` |
-| File list / 一覧 | `http://192.168.1.250/list` |
+| Page      | URL                          |
+|-----------|------------------------------|
+| Upload    | `http://192.168.1.250/photo` |
+| File list | `http://192.168.1.250/list`  |
 
 > Replace `192.168.1.250` with the IP address of your AP interface.
-> `192.168.1.250` はAPインターフェースのIPアドレスに合わせて変更してください。
 
 > **Note:** The URLs above assume nginx is running as a reverse proxy on port 80 (the default HTTP port).
 > If you access Flask directly without nginx, append `:5400` to the URL (e.g., `http://192.168.1.250:5400/photo`).
->
-> 上記URLはnginxがポート80のリバースプロキシとして動作している場合のものです。
-> nginxを使わずFlaskに直接アクセスする場合は `:5400` を付けてください（例：`http://192.168.1.250:5400/photo`）。
 
 ---
 
-## Directory Structure / ディレクトリ構成
+## Directory Structure
 
 ```
 /opt/webapp/
@@ -163,6 +157,6 @@ Connect your smartphone to the Wi-Fi AP, then open:
 
 ---
 
-## License / ライセンス
+## License
 
 MIT License
