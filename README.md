@@ -4,6 +4,8 @@ A lightweight web application for transferring and browsing photos and videos ca
 
 スマートフォンから現場の写真・動画を転送・閲覧するための軽量Webアプリです。プラントエンジニアの現場利用を想定した設計になっています。
 
+![Plant Media Manager](doc/images/plantmedia.jpg)
+
 ---
 
 ## Features / 機能
@@ -136,6 +138,12 @@ Connect your smartphone to the Wi-Fi AP, then open:
 
 > Replace `192.168.1.250` with the IP address of your AP interface.
 > `192.168.1.250` はAPインターフェースのIPアドレスに合わせて変更してください。
+
+> **Note:** The URLs above assume nginx is running as a reverse proxy on port 80 (the default HTTP port).
+> If you access Flask directly without nginx, append `:5400` to the URL (e.g., `http://192.168.1.250:5400/photo`).
+>
+> 上記URLはnginxがポート80のリバースプロキシとして動作している場合のものです。
+> nginxを使わずFlaskに直接アクセスする場合は `:5400` を付けてください（例：`http://192.168.1.250:5400/photo`）。
 
 ---
 
