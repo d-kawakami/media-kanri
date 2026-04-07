@@ -6,7 +6,7 @@
 
 [English version here / English](README.md)
 
-**サーバ構築手順書:** [ThinkPad X260 ホームサーバ構築手順](doc/X260-HomeServer-Setup-JP.md)
+**サーバ構築手順書:** [ThinkPad X260 サーバ構築手順](doc/X260-HomeServer-Setup-JP.md)
 
 <img src="doc/images/plantmedia.jpg" width="440" >
 

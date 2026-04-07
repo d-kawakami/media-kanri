@@ -6,7 +6,7 @@ This project is designed to run on an old PC (such as a 10-year-old ThinkPad), m
 
 [日本語版はこちら / 日本語](README.ja.md)
 
-**Server Setup Guide:** [ThinkPad X260 Home Server Setup](doc/X260-HomeServer-Setup-EN.md)
+**Server Setup Guide:** [ThinkPad X260 Server Setup](doc/X260-HomeServer-Setup-EN.md)
 
 <img src="doc/images/plantmedia.jpg" width="440" >
 
