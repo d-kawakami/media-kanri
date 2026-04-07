@@ -1,8 +1,7 @@
-# Plant Media Manager / プラント メディア管理
+# Media Manager / メディア管理
 
-A lightweight web application for transferring and browsing photos and videos captured on-site at industrial facilities. Designed for plant engineers using smartphones on the factory floor.
-
-スマートフォンから現場の写真・動画を転送・閲覧するための軽量Webアプリです。プラントエンジニアの現場利用を想定した設計になっています。
+A lightweight web application for transferring and browsing photos and videos captured on-site at industrial facilities. 
+スマートフォンから現場の写真・動画を転送・閲覧するための軽量Webアプリです。
 
 <img src="doc/images/plantmedia.jpg" width="440" >
 
