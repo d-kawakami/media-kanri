@@ -222,20 +222,25 @@ sudo netfilter-persistent save
 
 ## Step 6: Samba (File Server)
 
+Share the web app's upload folder (`/opt/webapp/uploads`) so it can be accessed and managed from Windows.
+
 ```bash
-sudo mkdir -p /srv/share
-sudo chmod 777 /srv/share
+# Create the upload folder and set ownership to www-data
+sudo mkdir -p /opt/webapp/uploads
+sudo chown www-data:www-data /opt/webapp/uploads
+sudo chmod 775 /opt/webapp/uploads
 ```
 
 Append the following to `/etc/samba/smb.conf`:
 
 ```ini
-[Share]
-   comment = File Share
-   path = /srv/share
+[uploads]
+   comment = Web App Uploads
+   path = /opt/webapp/uploads
    browseable = yes
    read only = no
    guest ok = yes
+   force user = www-data
    create mask = 0664
    directory mask = 0775
 ```
@@ -245,11 +250,11 @@ sudo systemctl enable --now smbd nmbd
 sudo systemctl status smbd
 ```
 
-Access from Windows: `\\192.168.10.1\Share`  
+Access from Windows: `\\192.168.10.1\uploads`  
 Access from Linux:
 
 ```bash
-smbclient //192.168.10.1/Share -N
+smbclient //192.168.10.1/uploads -N
 ```
 
 ---
