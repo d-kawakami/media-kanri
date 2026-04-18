@@ -222,20 +222,25 @@ sudo netfilter-persistent save
 
 ## ステップ 6: Samba（ファイルサーバー）
 
+Webアプリのアップロードフォルダ（`/opt/webapp/uploads`）をWindowsから参照・操作できるように共有します。
+
 ```bash
-sudo mkdir -p /srv/share
-sudo chmod 777 /srv/share
+# アップロードフォルダを作成し、www-dataグループで管理
+sudo mkdir -p /opt/webapp/uploads
+sudo chown www-data:www-data /opt/webapp/uploads
+sudo chmod 775 /opt/webapp/uploads
 ```
 
 `/etc/samba/smb.conf` の末尾に追記します。
 
 ```ini
-[Share]
-   comment = File Share
-   path = /srv/share
+[uploads]
+   comment = Web App Uploads
+   path = /opt/webapp/uploads
    browseable = yes
    read only = no
    guest ok = yes
+   force user = www-data
    create mask = 0664
    directory mask = 0775
 ```
@@ -245,11 +250,11 @@ sudo systemctl enable --now smbd nmbd
 sudo systemctl status smbd
 ```
 
-Windowsからは `\\192.168.10.1\Share` でアクセスできます。  
+Windowsからは `\\192.168.10.1\uploads` でアクセスできます。  
 Linuxからは以下でアクセスできます。
 
 ```bash
-smbclient //192.168.10.1/Share -N
+smbclient //192.168.10.1/uploads -N
 ```
 
 ---
