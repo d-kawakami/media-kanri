@@ -2,7 +2,9 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory, flash, redirect, url_for
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
+import shutil
 import socket
+from datetime import datetime
 
 app = Flask(
     __name__,
@@ -28,6 +30,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 # 追加のメディアフォルダも存在確認 (もし存在しない場合は作成するか、エラーハンドリングを考慮)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TENKEN_DB_DIR = os.environ.get('TENKEN_DB_DIR', os.path.join(BASE_DIR, 'tenken_db'))
+
+if not os.path.exists(TENKEN_DB_DIR):
+    os.makedirs(TENKEN_DB_DIR)
 
 def get_server_ipv4():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -162,6 +170,60 @@ def delete_photo():
     except PermissionError as e:
         flash(f'Permission error: {str(e)}')
     return redirect(url_for('list_file', view_type=view_type))
+
+@app.route('/api/tenken/upload', methods=['POST'])
+def tenken_upload():
+    if 'db' not in request.files:
+        return jsonify({'error': 'db フィールドが必要です'}), 400
+
+    db_file = request.files['db']
+    if db_file.filename == '':
+        return jsonify({'error': 'ファイルが選択されていません'}), 400
+
+    dest_path = os.path.join(TENKEN_DB_DIR, 'tenken.db')
+    backup_path = None
+
+    if os.path.exists(dest_path):
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_path = os.path.join(TENKEN_DB_DIR, f'tenken.db.{timestamp}.bak')
+        shutil.move(dest_path, backup_path)
+
+    try:
+        db_file.save(dest_path)
+    except Exception as e:
+        return jsonify({'error': f'保存エラー: {str(e)}'}), 500
+
+    return jsonify({
+        'status': 'ok',
+        'backup': backup_path,
+        'saved_at': datetime.now().isoformat()
+    }), 200
+
+
+@app.route('/api/tenken/status', methods=['GET'])
+def tenken_status():
+    db_path = os.path.join(TENKEN_DB_DIR, 'tenken.db')
+    exists = os.path.exists(db_path)
+
+    size_bytes = None
+    last_modified = None
+    if exists:
+        stat = os.stat(db_path)
+        size_bytes = stat.st_size
+        last_modified = datetime.fromtimestamp(stat.st_mtime).isoformat()
+
+    backup_count = len([
+        f for f in os.listdir(TENKEN_DB_DIR)
+        if f.startswith('tenken.db.') and f.endswith('.bak')
+    ]) if os.path.exists(TENKEN_DB_DIR) else 0
+
+    return jsonify({
+        'exists': exists,
+        'size_bytes': size_bytes,
+        'last_modified': last_modified,
+        'backup_count': backup_count
+    })
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5400)
