@@ -171,6 +171,27 @@ def delete_photo():
         flash(f'Permission error: {str(e)}')
     return redirect(url_for('list_file', view_type=view_type))
 
+@app.route('/api/files')
+def api_files():
+    """xlsxファイル一覧をJSON形式で返す。
+    レスポンス例: [{"name": "foo.xlsx", "url": "http://host/download/foo.xlsx"}]
+    """
+    server_ip = get_displayed_ip()
+    port = request.environ.get('SERVER_PORT', '5400')
+    base_url = f"http://{server_ip}:{port}"
+
+    files = []
+    if os.path.exists(UPLOAD_FOLDER):
+        for filename in sorted(os.listdir(UPLOAD_FOLDER)):
+            fpath = os.path.join(UPLOAD_FOLDER, filename)
+            if os.path.isfile(fpath) and filename.lower().endswith('.xlsx'):
+                files.append({
+                    "name": filename,
+                    "url": f"{base_url}/download/{filename}"
+                })
+    return jsonify(files)
+
+
 @app.route('/api/tenken/upload', methods=['POST'])
 def tenken_upload():
     if 'db' not in request.files:
