@@ -1,250 +1,222 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, request, jsonify, send_from_directory, flash, redirect, url_for
-from jinja2 import ChoiceLoader, FileSystemLoader
-import os
-import shutil
-import socket
 from datetime import datetime
+import os
+import socket
+from pathlib import Path
 
-app = Flask(
-    __name__,
-    template_folder='templates'  # templates フォルダが app.py と同じ階層にある場合
+from flask import (
+    Flask,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    url_for,
 )
-app.secret_key = os.urandom(24)  # Generate a unique secret key
-# テンプレート検索パスを複数設定
-app.jinja_loader = ChoiceLoader([
-    FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')),
-    FileSystemLoader(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'common_templates')))
-])
 
-# グローバル変数でクライアントのIPアドレスを保持
-client_ip = None
 
-# 画像を保存するディレクトリ
-#UPLOAD_FOLDER = 'uploads' # 相対パスで指定する場合
-UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), 'uploads')) # 絶対パスで指定する場合
-# 追加で参照するメディアディレクトリ
+BASE_DIR = Path(__file__).resolve().parent
+UPLOAD_FOLDER = BASE_DIR / "uploads"
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".webm", ".m4v"}
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-# 追加のメディアフォルダも存在確認 (もし存在しない場合は作成するか、エラーハンドリングを考慮)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TENKEN_DB_DIR = os.environ.get('TENKEN_DB_DIR', os.path.join(BASE_DIR, 'tenken_db'))
+app = Flask(__name__, template_folder="templates")
+app.secret_key = os.environ.get("PLANT_MEDIA_SECRET") or os.urandom(24)
+app.config["UPLOAD_FOLDER"] = str(UPLOAD_FOLDER)
 
-if not os.path.exists(TENKEN_DB_DIR):
-    os.makedirs(TENKEN_DB_DIR)
+UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+
 
 def get_server_ipv4():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("8.8.8.8", 80))
-        ip_address = s.getsockname()[0]
-    except Exception as e:
-        ip_address = '127.0.0.1'
+        return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"
     finally:
         s.close()
-    return ip_address
+
 
 def get_client_ip():
-    x_forwarded_for = request.environ.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.environ.get('REMOTE_ADDR')
-    return ip
+    forwarded = request.environ.get("HTTP_X_FORWARDED_FOR")
+    if forwarded:
+        return forwarded.split(",")[0]
+    return request.environ.get("REMOTE_ADDR")
+
 
 def get_displayed_ip():
-    client_ip = get_client_ip()
-    server_ip = get_server_ipv4()
+    return "localhost" if get_client_ip() == "127.0.0.1" else get_server_ipv4()
 
-    if client_ip == '127.0.0.1':
-        return 'localhost'
-    else:
-        return server_ip
 
-@app.route('/photo')
-def index():
-    ip_address = get_displayed_ip()
-    # 両方のフォルダからファイルを取得
-    photos = []
-    if os.path.exists(app.config['UPLOAD_FOLDER']):
-        photos.extend(os.listdir(app.config['UPLOAD_FOLDER']))
-    # 重複を排除し、ソートするなど、必要に応じてリストを整形してください
-    photos = sorted(list(set(photos))) # 重複排除とソート
-    return render_template('index.html', ip_address=ip_address, photos=photos)
+def sanitize_filename(filename):
+    original = Path(filename or "").name
+    cleaned = "".join(ch for ch in original if ch not in '<>:"/\\|?*' and ord(ch) >= 32).strip()
+    if cleaned in {"", ".", ".."}:
+        cleaned = f"media_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    return cleaned
 
-@app.route('/upload', methods=['POST'])
-def upload():
-    if 'image' in request.files:
-        image_file = request.files['image']
-        # 画像を保存する（UPLOAD_FOLDERに保存するように変更なし）
-        image_path = os.path.join(UPLOAD_FOLDER, image_file.filename)
-        image_file.save(image_path)
-        return jsonify({'message': 'Upload successful', 'image_path': image_path})
-    else:
-        return jsonify({'error': 'No image provided'})
 
-@app.route('/list')
-def list_file():
-    # 重複を避けるためにセットを使用
-    unique_filenames = set()
-    
-    # 最終的にテンプレートに渡すリスト
-    files_to_pass = []
-    full_paths_to_pass = [] # これがファイル名表示用のリストになる
+def unique_filename(filename):
+    candidate = sanitize_filename(filename)
+    path = UPLOAD_FOLDER / candidate
+    if not path.exists():
+        return candidate
 
-    # 各フォルダからファイルを収集
-    for folder_path in [
-        app.config['UPLOAD_FOLDER'],
-    ]:
-        if os.path.exists(folder_path):
-            for filename in os.listdir(folder_path):
-                # ファイルであることを確認し、重複を避ける
-                full_item_path = os.path.join(folder_path, filename)
-                if os.path.isfile(full_item_path) and filename not in unique_filenames:
-                    unique_filenames.add(filename)
-                    files_to_pass.append(filename)                   
-                    full_paths_to_pass.append(full_item_path) 
+    stem = Path(candidate).stem or "media"
+    suffix = Path(candidate).suffix
+    counter = 2
+    while True:
+        numbered = f"{stem}_{counter}{suffix}"
+        if not (UPLOAD_FOLDER / numbered).exists():
+            return numbered
+        counter += 1
 
-    # ファイル名をアルファベット順にソート（必要であれば）
-    # ソートする際に、files_to_pass と full_paths_to_pass の対応関係を維持する必要があります。
-    # ここでは、タプルのリストとして保持し、ソート後に分解する方法が安全です。
-    combined_list = sorted(zip(files_to_pass, full_paths_to_pass))
-    files_to_pass = [item[0] for item in combined_list]
-    full_paths_to_pass = [item[1] for item in combined_list]
 
-    ip_address = get_displayed_ip()
-    return render_template('list.html', files=files_to_pass, full_paths=full_paths_to_pass, ip_address=ip_address)
+def media_kind(filename):
+    ext = Path(filename).suffix.lower()
+    if ext in IMAGE_EXTENSIONS:
+        return "image"
+    if ext in VIDEO_EXTENSIONS:
+        return "video"
+    return "file"
 
-@app.route('/image/<filename>')
-def display_image(filename):
-    # 画像と動画を処理するための条件分岐
-    if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
-        media_type = 'image'
-    elif filename.lower().endswith(('.mp4', '.mov', '.avi', '.webm')):
-        media_type = 'video'
-    else:
-        media_type = None
-    ip_address = get_displayed_ip()
-    return render_template('image.html', filename=filename, media_type=media_type, ip_address=ip_address)
 
-@app.route('/download/<filename>')
-def download_file(filename):
-    for folder in [app.config['UPLOAD_FOLDER']]:
-        if os.path.exists(os.path.join(folder, filename)):
-            return send_from_directory(folder, filename, as_attachment=True)
-    flash(f'File {filename} not found.')
-    return redirect(url_for('list_file'))
-
-@app.route('/media/<filename>') # パス名を変更しました
-def send_media(filename): # 関数名も変更しました
-    # まずUPLOAD_FOLDER内でファイルを探す
-    if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    else:
-        # ファイルが見つからない場合のエラーハンドリング
-        flash(f'File {filename} not found.')
-        return redirect(url_for('list_file')) # または適切なエラーページへリダイレクト
-
-@app.route('/delete', methods=['POST'])
-def delete_photo():
-    photo = request.form['photo']
-    view_type = request.form.get('view_type', 'thumbnails')
-
-    # UPLOAD_FOLDERからの削除のみを許可（または両方から削除するか選択できるようにする）
-    photo_path_upload = os.path.join(app.config['UPLOAD_FOLDER'], photo)
-
-    deleted_from = []
-    try:
-        if os.path.exists(photo_path_upload):
-            os.remove(photo_path_upload)
-            deleted_from.append('uploads')
-
-        if deleted_from:
-            flash(f'Photo {photo} deleted successfully from: {", ".join(deleted_from)}.')
-        else:
-            flash(f'Photo {photo} does not exist in any managed folders.')
-    except PermissionError as e:
-        flash(f'Permission error: {str(e)}')
-    return redirect(url_for('list_file', view_type=view_type))
-
-@app.route('/api/files')
-def api_files():
-    """xlsxファイル一覧をJSON形式で返す。
-    レスポンス例: [{"name": "foo.xlsx", "url": "http://host/download/foo.xlsx"}]
-    """
-    server_ip = get_displayed_ip()
-    port = request.environ.get('SERVER_PORT', '5400')
-    base_url = f"http://{server_ip}:{port}"
-
+def list_media_files():
     files = []
-    if os.path.exists(UPLOAD_FOLDER):
-        for filename in sorted(os.listdir(UPLOAD_FOLDER)):
-            fpath = os.path.join(UPLOAD_FOLDER, filename)
-            if os.path.isfile(fpath) and filename.lower().endswith('.xlsx'):
-                files.append({
-                    "name": filename,
-                    "url": f"{base_url}/download/{filename}"
-                })
-    return jsonify(files)
+    for item in UPLOAD_FOLDER.iterdir():
+        if not item.is_file():
+            continue
+        stat = item.stat()
+        files.append(
+            {
+                "name": item.name,
+                "kind": media_kind(item.name),
+                "size": stat.st_size,
+                "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+            }
+        )
+    return sorted(files, key=lambda x: (x["kind"] != "image", x["name"].lower()))
 
 
-@app.route('/api/tenken/upload', methods=['POST'])
-def tenken_upload():
-    if 'db' not in request.files:
-        return jsonify({'error': 'db フィールドが必要です'}), 400
+def save_uploaded_file(file_storage, source=None):
+    if not file_storage or not file_storage.filename:
+        raise ValueError("ファイルが指定されていません")
 
-    db_file = request.files['db']
-    if db_file.filename == '':
-        return jsonify({'error': 'ファイルが選択されていません'}), 400
+    filename = sanitize_filename(file_storage.filename)
+    if source:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{sanitize_filename(source)}_{ts}_{filename}"
+    filename = unique_filename(filename)
+    file_storage.save(UPLOAD_FOLDER / filename)
+    return filename
 
-    dest_path = os.path.join(TENKEN_DB_DIR, 'tenken.db')
-    backup_path = None
 
-    if os.path.exists(dest_path):
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_path = os.path.join(TENKEN_DB_DIR, f'tenken.db.{timestamp}.bak')
-        shutil.move(dest_path, backup_path)
+@app.route("/")
+def root():
+    return redirect(url_for("media"))
+
+
+@app.route("/photo")
+@app.route("/list")
+def legacy_pages():
+    return redirect(url_for("media"))
+
+
+@app.route("/image/<path:filename>")
+def legacy_viewer(filename):
+    return redirect(url_for("media", q=sanitize_filename(filename)))
+
+
+@app.route("/media")
+def media():
+    return render_template("media.html", files=list_media_files(), ip_address=get_displayed_ip())
+
+
+@app.route("/upload", methods=["POST"])
+def upload():
+    uploaded = request.files.getlist("image") or request.files.getlist("file")
+    if not uploaded:
+        return jsonify({"error": "No file provided"}), 400
+
+    saved = []
+    errors = []
+    for file_storage in uploaded:
+        try:
+            saved.append(save_uploaded_file(file_storage))
+        except Exception as exc:
+            errors.append({"filename": file_storage.filename, "error": str(exc)})
+
+    status = 207 if errors and saved else 400 if errors else 200
+    return jsonify({"message": "Upload complete", "files": saved, "errors": errors}), status
+
+
+@app.route("/media/file/<path:filename>")
+def send_media(filename):
+    return send_from_directory(app.config["UPLOAD_FOLDER"], sanitize_filename(filename))
+
+
+@app.route("/download/<path:filename>")
+def download_file(filename):
+    safe_name = sanitize_filename(filename)
+    path = UPLOAD_FOLDER / safe_name
+    if path.exists() and path.is_file():
+        return send_from_directory(app.config["UPLOAD_FOLDER"], safe_name, as_attachment=True)
+    flash(f"File {safe_name} not found.")
+    return redirect(url_for("media"))
+
+
+@app.route("/delete", methods=["POST"])
+def delete_photo():
+    safe_name = sanitize_filename(request.form.get("photo", ""))
+    path = UPLOAD_FOLDER / safe_name
+    try:
+        if path.exists() and path.is_file():
+            path.unlink()
+            flash(f"{safe_name} を削除しました。")
+        else:
+            flash(f"{safe_name} が見つかりません。")
+    except PermissionError as exc:
+        flash(f"Permission error: {exc}")
+    return redirect(url_for("media"))
+
+
+@app.route("/api/upload", methods=["POST", "OPTIONS"])
+def api_upload():
+    """他アプリからのメディア受信エンドポイント（CORS対応）。"""
+    if request.method == "OPTIONS":
+        resp = app.make_response("")
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return resp
+
+    image_file = request.files.get("image") or request.files.get("file")
+    if image_file is None:
+        resp = jsonify({"error": "image または file フィールドが必要です"})
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        return resp, 400
 
     try:
-        db_file.save(dest_path)
-    except Exception as e:
-        return jsonify({'error': f'保存エラー: {str(e)}'}), 500
+        filename = save_uploaded_file(image_file, source=request.form.get("source", "unknown"))
+    except Exception as exc:
+        resp = jsonify({"error": str(exc)})
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        return resp, 400
 
-    return jsonify({
-        'status': 'ok',
-        'backup': backup_path,
-        'saved_at': datetime.now().isoformat()
-    }), 200
-
-
-@app.route('/api/tenken/status', methods=['GET'])
-def tenken_status():
-    db_path = os.path.join(TENKEN_DB_DIR, 'tenken.db')
-    exists = os.path.exists(db_path)
-
-    size_bytes = None
-    last_modified = None
-    if exists:
-        stat = os.stat(db_path)
-        size_bytes = stat.st_size
-        last_modified = datetime.fromtimestamp(stat.st_mtime).isoformat()
-
-    backup_count = len([
-        f for f in os.listdir(TENKEN_DB_DIR)
-        if f.startswith('tenken.db.') and f.endswith('.bak')
-    ]) if os.path.exists(TENKEN_DB_DIR) else 0
-
-    return jsonify({
-        'exists': exists,
-        'size_bytes': size_bytes,
-        'last_modified': last_modified,
-        'backup_count': backup_count
-    })
+    resp = jsonify(
+        {
+            "message": "Upload successful",
+            "filename": filename,
+            "memo": request.form.get("memo", ""),
+        }
+    )
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
 
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True, port=5400)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True, port=5400, use_reloader=False)

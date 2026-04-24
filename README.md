@@ -134,13 +134,12 @@ Connect your smartphone to the Wi-Fi AP, then open:
 
 | Page      | URL                          |
 |-----------|------------------------------|
-| Upload    | `http://192.168.1.250/photo` |
-| File list | `http://192.168.1.250/list`  |
+| Media manager | `http://192.168.1.250/media` |
 
 > Replace `192.168.1.250` with the IP address of your AP interface.
 
 > **Note:** The URLs above assume nginx is running as a reverse proxy on port 80 (the default HTTP port).
-> If you access Flask directly without nginx, append `:5400` to the URL (e.g., `http://192.168.1.250:5400/photo`).
+> If you access Flask directly without nginx, append `:5400` to the URL (e.g., `http://192.168.1.250:5400/media`).
 
 ---
 
@@ -151,11 +150,8 @@ Connect your smartphone to the Wi-Fi AP, then open:
 ├── app.py              # Flask application
 ├── README.md
 ├── uploads/            # Uploaded files (www-data writable)
-├── static/
 ├── templates/
-│   ├── index.html      # Upload page
-│   ├── list.html       # File browser
-│   └── image.html      # Media viewer
+│   └── media.html      # Integrated media manager
 └── venv/
 ```
 
