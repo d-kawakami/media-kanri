@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 import socket
 from pathlib import Path
+from urllib.parse import quote
 
 from flask import (
     Flask,
@@ -226,7 +227,7 @@ def api_files():
     base_url = f"http://{server_ip}:{port}"
 
     files = [
-        {"name": item.name, "url": f"{base_url}/download/{item.name}"}
+        {"name": item.name, "url": f"{base_url}/download/{quote(item.name)}"}
         for item in sorted(UPLOAD_FOLDER.iterdir())
         if item.is_file() and item.suffix.lower() == ".xlsx"
     ]
