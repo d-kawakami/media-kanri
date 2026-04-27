@@ -218,5 +218,20 @@ def api_upload():
     return resp
 
 
+@app.route("/api/files")
+def api_files():
+    """xlsxファイル一覧をJSON形式で返す。"""
+    server_ip = get_displayed_ip()
+    port = request.environ.get("SERVER_PORT", "5400")
+    base_url = f"http://{server_ip}:{port}"
+
+    files = [
+        {"name": item.name, "url": f"{base_url}/download/{item.name}"}
+        for item in sorted(UPLOAD_FOLDER.iterdir())
+        if item.is_file() and item.suffix.lower() == ".xlsx"
+    ]
+    return jsonify(files)
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=5400, use_reloader=False)
