@@ -221,7 +221,7 @@ def api_upload():
 @app.route("/api/files")
 def api_files():
     """xlsxファイル一覧をJSON形式で返す。"""
-    server_ip = get_displayed_ip()
+    server_ip = get_server_ipv4()
     port = request.environ.get("SERVER_PORT", "5400")
     base_url = f"http://{server_ip}:{port}"
 
