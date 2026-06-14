@@ -1,62 +1,66 @@
-# Media Manager
+# メディア管理
 
-A lightweight web application for transferring and browsing photos and videos captured on-site at industrial facilities.
+スマートフォンから現場の写真・動画を転送・閲覧するための軽量Webアプリです。
 
-This project is designed to run on an old PC (such as a 10-year-old ThinkPad), making it possible to build a functional server at minimal cost — no new hardware required.
+10年前の古いPC（ThinkPad X260 など）を活用して、新たなハードウェア購入なしに低コストでサーバを構築することを想定しています。
 
-[日本語版はこちら / 日本語](README.ja.md)
+[English version here / English](README.en.md)
 
-**Server Setup Guide:** [ThinkPad X260 Server Setup](doc/X260-HomeServer-Setup-EN.md)
+**サーバ構築手順書:** [ThinkPad X260 サーバ構築手順](doc/X260-HomeServer-Setup-JP.md)
 
 <img src="doc/images/plantmedia.jpg" width="440" >
 
 ---
 
-## Features
+## 機能
 
-- **File Upload**
-  - Camera capture and file selection from smartphone
-  - Drag & drop support
-  - Multi-file simultaneous upload with progress bar
+- **ファイル転送**
+  - スマートフォンからカメラ撮影・ファイル選択
+  - ドラッグ＆ドロップ対応
+  - 複数ファイル同時転送・進捗バー表示
 
-- **File Browser**
-  - Thumbnail grid view
-  - Filename list view
-  - Supports images (JPG, PNG, GIF), videos (MP4, MOV, AVI, WebM), and any other file types
+- **ファイル一覧**
+  - サムネイルグリッド表示
+  - ファイル名リスト表示
+  - 画像（JPG, PNG, GIF）・動画（MP4, MOV, AVI, WebM）・その他すべてのファイル形式に対応
 
-- **Download**
-  - Direct download of any file from client devices
+- **ダウンロード**
+  - クライアント端末からの直接ダウンロード
 
-- **Delete**
-  - Delete files with confirmation dialog
+- **ファイル一覧 API**
+  - `/api/files` エンドポイントで xlsx ファイル一覧を JSON 形式で返却
+  - 他アプリ（引継ぎノート等）からのネットワーク経由インポートに対応
 
-- **Media Viewer**
-  - Full-screen image/video viewer with download button
+- **削除**
+  - 確認ダイアログ付きでファイル削除
+
+- **メディアビューア**
+  - フルスクリーンの画像・動画ビューア（ダウンロードボタン付き）
 
 ---
 
-## System Architecture
+## システム構成
 
 ```
-Smartphone (Client)
+スマートフォン（クライアント）
       |
    Wi-Fi AP (hostapd)
       |
-   nginx (port 80)  ←→  Flask app (port 5400)
+   nginx (ポート80)  ←→  Flaskアプリ (ポート5400)
       |
    dnsmasq (DHCP)
 ```
 
-| Component   | Role                        |
-|-------------|-----------------------------|
-| hostapd     | Wi-Fi Access Point          |
-| dnsmasq     | DHCP server                 |
-| nginx       | Reverse proxy (port 80)     |
-| Flask       | Web application (port 5400) |
+| コンポーネント | 役割                          |
+|--------------|-------------------------------|
+| hostapd      | Wi-Fiアクセスポイント           |
+| dnsmasq      | DHCPサーバー                  |
+| nginx        | リバースプロキシ（ポート80）     |
+| Flask        | Webアプリケーション（ポート5400）|
 
 ---
 
-## Requirements
+## 動作要件
 
 - Python 3.10+
 - Flask
@@ -66,16 +70,16 @@ Smartphone (Client)
 
 ---
 
-## Setup
+## セットアップ
 
-### 1. Clone the repository
+### 1. リポジトリをクローン
 
 ```bash
 git clone https://github.com/d-kawakami/media-kanri.git
 cd media-kanri
 ```
 
-### 2. Create virtual environment
+### 2. 仮想環境を作成
 
 ```bash
 python3 -m venv venv
@@ -83,7 +87,7 @@ source venv/bin/activate
 pip install flask
 ```
 
-### 3. Configure nginx
+### 3. nginx設定
 
 ```nginx
 server {
@@ -98,7 +102,7 @@ server {
 }
 ```
 
-### 4. Configure systemd service
+### 4. systemdサービス設定
 
 ```ini
 [Unit]
@@ -120,7 +124,7 @@ sudo systemctl enable webapp
 sudo systemctl start webapp
 ```
 
-### 5. Set upload folder permissions
+### 5. アップロードフォルダの権限設定
 
 ```bash
 sudo chown www-data /opt/webapp/uploads
@@ -128,35 +132,35 @@ sudo chown www-data /opt/webapp/uploads
 
 ---
 
-## Access
+## アクセス方法
 
-Connect your smartphone to the Wi-Fi AP, then open:
+スマートフォンをWi-FiのAPに接続し、以下のURLにアクセスしてください。
 
-| Page      | URL                          |
-|-----------|------------------------------|
-| Media manager | `http://192.168.1.250/media` |
+| ページ   | URL                          |
+|---------|------------------------------|
+| メディア管理 | `http://192.168.1.250/media` |
 
-> Replace `192.168.1.250` with the IP address of your AP interface.
+> `192.168.1.250` はAPインターフェースのIPアドレスに合わせて変更してください。
 
-> **Note:** The URLs above assume nginx is running as a reverse proxy on port 80 (the default HTTP port).
-> If you access Flask directly without nginx, append `:5400` to the URL (e.g., `http://192.168.1.250:5400/media`).
+> **注意:** 上記URLはnginxがポート80のリバースプロキシとして動作している場合のものです。
+> nginxを使わずFlaskに直接アクセスする場合は `:5400` を付けてください（例：`http://192.168.1.250:5400/media`）。
 
 ---
 
-## Directory Structure
+## ディレクトリ構成
 
 ```
 /opt/webapp/
-├── app.py              # Flask application
+├── app.py              # Flaskアプリケーション
 ├── README.md
-├── uploads/            # Uploaded files (www-data writable)
+├── uploads/            # アップロードされたファイル（www-dataが書き込み可能）
 ├── templates/
-│   └── media.html      # Integrated media manager
+│   └── media.html      # 統合メディア管理画面
 └── venv/
 ```
 
 ---
 
-## License
+## ライセンス
 
 MIT License
